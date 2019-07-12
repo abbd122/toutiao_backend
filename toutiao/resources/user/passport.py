@@ -14,7 +14,7 @@ from models.user import User, UserProfile
 from utils.jwt_util import generate_jwt
 # from cache import user as cache_user
 from utils.limiter import limiter as lmt
-from utils.decorators import set_db_to_read, set_db_to_write
+from utils.decorators import set_db_to_read, set_db_to_write, login_reqired
 
 
 class SMSVerificationCodeResource(Resource):
@@ -45,7 +45,7 @@ class AuthorizationResource(Resource):
     """
     method_decorators = {
         'post': [set_db_to_write],
-        'put': [set_db_to_read]
+        'put': [set_db_to_read, login_reqired]
     }
 
     def _generate_tokens(self, user_id, with_refresh_token=True):
@@ -55,7 +55,17 @@ class AuthorizationResource(Resource):
         :return: token, refresh_token
         """
         # 颁发JWT
-        pass
+        payload = {'user_id': user_id}
+        now = datetime.utcnow()
+        expiry = now + timedelta(hours=current_app.config['JWT_EXPIRY_HOURS'])
+        token = generate_jwt(payload=payload, expiry=expiry)
+        refresh_payload = {
+            'user_id': user_id,
+            'is_refresh': True
+        }
+        refresh_expiry = now + timedelta(days=current_app.config['JWT_REFRESH_DAYS'])
+        refresh_token = generate_jwt(payload=refresh_payload, expiry=refresh_expiry)
+        return token, refresh_token
 
     def post(self):
         """
@@ -75,7 +85,6 @@ class AuthorizationResource(Resource):
         except ConnectionError as e:
             current_app.logger.error(e)
             real_code = current_app.redis_slave.get(key)
-
         try:
             current_app.redis_master.delete(key)
         except ConnectionError as e:
@@ -102,6 +111,169 @@ class AuthorizationResource(Resource):
         token, refresh_token = self._generate_tokens(user.id)
 
         return {'token': token, 'refresh_token': refresh_token}, 201
+
+    def put(self):
+        user_id = g.user_id
+        is_refresh = g.is_refresh
+        if user_id and is_refresh:
+            token, refresh_token = self._generate_tokens(user_id, with_refresh_token=False)
+            return {'token': token}
+        else:
+            return {'message': 'refresh token invalid'}, 403
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

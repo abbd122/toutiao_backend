@@ -14,6 +14,9 @@ from settings.default import DefaultConfig
 
 app = create_app(DefaultConfig, enable_config_file=True)
 
+from toutiao.resources.middle_ware import jwt_authorization
+app.before_request(jwt_authorization)
+
 
 @app.route('/')
 def route_map():
