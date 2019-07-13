@@ -35,7 +35,7 @@ def login_reqired(func):
     '''
 
     def wrapper(*args, **kwargs):
-        if g.user_id is not None and g.is_refresh:
+        if g.user_id is not None and g.is_refresh is False:
             return func(*args, **kwargs)
         else:
             return {'message': 'invalid token'}, 401

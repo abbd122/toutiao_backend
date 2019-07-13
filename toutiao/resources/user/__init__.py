@@ -4,6 +4,7 @@ from flask_restful import Api
 from . import passport
 # from . import following, channel, blacklist, profile, figure
 from utils.output import output_json
+from . import profile
 
 user_bp = Blueprint('user', __name__)
 user_api = Api(user_bp, catch_all_404s=True)
@@ -14,6 +15,8 @@ user_api.add_resource(passport.SMSVerificationCodeResource, '/v1_0/sms/codes/<mo
 
 user_api.add_resource(passport.AuthorizationResource, '/v1_0/authorizations',
                       endpoint='Authorization')
+
+user_api.add_resource(passport.ModifyResource, '/v1_0/modify', endpoint='Modify')
 #
 # user_api.add_resource(following.FollowingListResource, '/v1_0/user/followings',
 #                       endpoint='Followings')
@@ -51,5 +54,5 @@ user_api.add_resource(passport.AuthorizationResource, '/v1_0/authorizations',
 # user_api.add_resource(figure.FigureResource, '/v1_0/user/figure',
 #                       endpoint='Figure')
 #
-# user_api.add_resource(profile.PhotoResource, '/v1_0/user/photo',
-#                       endpoint='Photo')
+user_api.add_resource(profile.PhotoResource, '/v1_0/user/photo',
+                      endpoint='Photo')

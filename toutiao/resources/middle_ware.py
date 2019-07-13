@@ -8,7 +8,7 @@ def jwt_authorization():
     g.is_refresh = False
 
     header_token = request.headers.get('Authorization')
-    if header_token and header_token.startwith('Bearer '):
+    if header_token and header_token.startswith('Bearer '):
         token = header_token[7:]
         payload = verify_jwt(token)
         if payload:
