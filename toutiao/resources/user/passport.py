@@ -14,7 +14,7 @@ from models.user import User, UserProfile
 from utils.jwt_util import generate_jwt
 # from cache import user as cache_user
 from utils.limiter import limiter as lmt
-from utils.decorators import set_db_to_read, set_db_to_write
+from utils.decorators import set_db_to_read, set_db_to_write, login_reqired
 
 
 class SMSVerificationCodeResource(Resource):
@@ -44,6 +44,7 @@ class AuthorizationResource(Resource):
     认证
     """
     method_decorators = {
+        'get': [login_reqired],
         'post': [set_db_to_write],
         'put': [set_db_to_read]
     }
@@ -55,7 +56,25 @@ class AuthorizationResource(Resource):
         :return: token, refresh_token
         """
         # 颁发JWT
-        pass
+        payload = {'user_id': user_id}
+        now = datetime.utcnow()
+        expiry = now + timedelta(hours=current_app.config['JWT_EXPIRY_HOURS'])
+        token = generate_jwt(payload=payload, expiry=expiry)
+        refresh_token = None
+        if with_refresh_token == True:
+            refresh_payload = {
+                'user_id': user_id,
+                'is_refresh': True
+            }
+            refresh_expiry = now + timedelta(days=current_app.config['JWT_REFRESH_DAYS'])
+            refresh_token = generate_jwt(payload=refresh_payload, expiry=refresh_expiry)
+        return token, refresh_token
+
+    def get(self):
+        '''
+        模拟用户必须登录才能访问的视图函数
+        '''
+        return {'message', 'token invalid'}
 
     def post(self):
         """
@@ -75,7 +94,6 @@ class AuthorizationResource(Resource):
         except ConnectionError as e:
             current_app.logger.error(e)
             real_code = current_app.redis_slave.get(key)
-
         try:
             current_app.redis_master.delete(key)
         except ConnectionError as e:
@@ -102,6 +120,220 @@ class AuthorizationResource(Resource):
         token, refresh_token = self._generate_tokens(user.id)
 
         return {'token': token, 'refresh_token': refresh_token}, 201
+
+    def put(self):
+        user_id = g.user_id
+        is_refresh = g.is_refresh
+        if user_id and is_refresh:
+            token, refresh_token = self._generate_tokens(user_id, with_refresh_token=False)
+            return {'token': token}
+        else:
+            return {'message': 'refresh token invalid'}, 403
+
+
+class ModifyResource(Resource):
+
+    method_decorators = [login_reqired]
+
+    def _generate_tokens(self, user_id, with_refresh_token=True):
+        """
+        生成token 和refresh_token
+        :param user_id: 用户id
+        :return: token, refresh_token
+        """
+        # 颁发JWT
+        payload = {'user_id': user_id}
+        now = datetime.utcnow()
+        expiry = now + timedelta(hours=current_app.config['JWT_EXPIRY_HOURS'])
+        token = generate_jwt(payload=payload, expiry=expiry)
+        refresh_token = None
+        if with_refresh_token == True:
+            refresh_payload = {
+                'user_id': user_id,
+                'is_refresh': True
+            }
+            refresh_expiry = now + timedelta(days=current_app.config['JWT_REFRESH_DAYS'])
+            refresh_token = generate_jwt(payload=refresh_payload, expiry=refresh_expiry)
+        return token, refresh_token
+
+    def post(self):
+
+        # 此处执行修改密码逻辑，假装已修改
+        user_id = g.user_id
+        key = 'user:{}:token'.format(user_id)
+        pl = current_app.redis_master.pipeline()
+        new_token, refresh_token = self._generate_tokens(user_id)
+        pl.sadd(key, new_token)
+        pl.expire(key, 7200)
+        pl.execute()
+        return {'message': '修改密码成功', 'token': new_token}
+
+    def get(self):
+        '''
+        其他设备访问
+        '''
+        user_id = g.user_id
+        headers_token = request.headers.get('Authorization')
+        token = headers_token[7:]
+        key = 'user:{}:token'.format(user_id)
+        valid_tokens = current_app.redis_master.members(key)
+        valid_tokens = list(valid_tokens)
+        new_valid_tokens = []
+        for each_token in valid_tokens:
+            new_valid_tokens.append(each_token.decode())
+        if valid_tokens and token in new_valid_tokens:
+            return {'message': 'Invalid token'}, 403
+        else:
+            return {'message': 'success'}, 200
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
