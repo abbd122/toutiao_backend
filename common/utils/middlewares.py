@@ -1,9 +1,9 @@
 from flask import request,g
 
-from common.utils.jwt_util import *
+from .jwt_util import *
 
 
-def jwt_authorization():
+def jwt_authentication():
     g.user_id = None
     g.is_refresh = False
 
