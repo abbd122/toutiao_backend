@@ -7,13 +7,33 @@ from utils.decorators import login_reqired
 from utils.parser import image_file
 from models.user import User
 from models import db
+from common.cache.user_cache import UserProfileCache
+
+
+class CurrentUserResource(Resource):
+    '''用户信息'''
+
+    # 要求用户必须登录
+    method_decorators = [login_reqired]
+
+    def get(self):
+        '''
+        获取用户数据
+        '''
+
+        # 获取g变量中保存的user_id
+        user_id = g.user_id
+        # 调用工具类中的get方法获取用户数据
+        user_dict = UserProfileCache(user_id).get()
+        # 给用户字典添加id字段
+        user_dict['user_id'] = g.user_id
 
 
 class PhotoResource(Resource):
     '''
     修改图片数据
     '''
-    # method_decorators = [login_reqired]
+    method_decorators = [login_reqired]
 
     def patch(self):
         user_id = g.user_id
