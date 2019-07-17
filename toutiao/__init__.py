@@ -5,6 +5,10 @@ import grpc
 from elasticsearch5 import Elasticsearch
 # import socketio
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
+from .schedule.statistics import *
+
 
 def create_flask_app(config, enable_config_file=False):
     """
@@ -36,6 +40,19 @@ def create_app(config, enable_config_file=False):
     app.id_worker = IdWorker(app.config['DATACENTER_ID'],
                              app.config['WORKER_ID'],
                              app.config['SEQUENCE'])
+
+    # 定时任务
+    # 创建执行器对象
+    executors = {
+        # 默认多线程,最大10个线程并发执行
+        'default': ThreadPoolExecutor(max_workers=10)
+    }
+    # 创建调度器对象
+    app.scheduler = BackgroundScheduler(executors=executors)
+    # 添加定时任务,每天凌晨4点执行
+    app.scheduler.add_job(fix_statistic, trigger='cron', hour=4, args=[app])
+    # 启动调度器
+    app.scheduler.start()
 
     # 限流器
     from utils.limiter import limiter as lmt
@@ -100,4 +117,3 @@ def create_app(config, enable_config_file=False):
     app.register_blueprint(search_bp)
 
     return app
-
