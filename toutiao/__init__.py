@@ -50,7 +50,9 @@ def create_app(config, enable_config_file=False):
     # 创建调度器对象
     app.scheduler = BackgroundScheduler(executors=executors)
     # 添加定时任务,每天凌晨4点执行
-    app.scheduler.add_job(fix_statistic, trigger='cron', hour=4, args=[app])
+    # app.scheduler.add_job(fix_statistic, trigger='cron', hour=4, args=[app])
+    # 立即执行
+    app.scheduler.add_job(fix_statistic, trigger='date', args=[app])
     # 启动调度器
     app.scheduler.start()
 

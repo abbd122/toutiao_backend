@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+// web后端向推荐系统发送请求参数的推荐协议
+message UserRequest {
+    string user_id=1;  // 用户id,改成字符串的原因：兼容匿名用户
+    int32 channel_id=2;  // 频道id
+    int32 article_num=3;  // 推荐的文章数量
+    int64 timestamp=4;  // 推荐的时间戳
+}
+
+// 推荐文章的埋点数据
+message Track {
+    string like=1;  // 点赞
+    string collect=2;  // 收藏
+    string share=3;  // 分享
+    string repost=4;  // 转发
+}
+
+// 推荐文章的具体数据
+message Article {
+    int32 article_id=1;  // 文章id
+    Track track=2;  // 埋点数据
+}
+
+// 推荐系统返回给web后端的响应数据
+message ArticleResponse {
+    string exposure=1;  // 曝光参数
+    int64 time_stamp=2;  // 推荐文章的事件
+    repeated Article recommends=3;  // 文章具体数据,包含文章id,埋点数据[列表]
+}
+
+// 定义服务---类似于python中的类
+service UserArticleRecommend {
+    rpc user_recommend(UserRequest) returns (ArticleResponse) {}
+}
