@@ -3,8 +3,13 @@ import eventlet
 eventlet.monkey_patch()
 
 import sys
+import os
 import eventlet.wsgi
 
+
+# 追加系统导包路径
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.join(BASE_DIR, 'common')
 
 # 设置动态端口
 if len(sys.argv) < 2:
@@ -14,7 +19,7 @@ if len(sys.argv) < 2:
 port = int(sys.argv[1])
 
 from server import app
-from chat import *
+import chat
 
 # 设置socket服务器监听的ip和端口
 SOCKET_ADDRESS = ('', port)

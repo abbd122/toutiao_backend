@@ -72,7 +72,8 @@ def create_app(config, enable_config_file=False):
     )
 
     # socket.io
-    # app.sio = socketio.KombuManager(app.config['RABBITMQ'], write_only=True)
+    import socketio
+    app.sio = socketio.KombuManager(app.config['RABBITMQ'], write_only=True)
     # MySQL数据库连接初始化
     from models import db
 

@@ -1,7 +1,6 @@
 from server import sio
 import time
 
-
 """
 需求：
 1.当客户端连接sio服务器成功后，im主动发送一条消息给客户端
