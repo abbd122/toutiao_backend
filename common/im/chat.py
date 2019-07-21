@@ -1,67 +1,54 @@
 from server import sio
+import time
 
-# 特殊事件
-# 连接事件, 与客户端建立好连接后执行
+
+"""
+需求：
+1.当客户端连接sio服务器成功后，im主动发送一条消息给客户端
+2.当客户端发送消息给sio服务器，调用（RPC）AI系统智能回复一条消息
+
+数据格式：
+{
+    "msg": "内容",
+    "timestamp": "时间戳"
+}
+
+前后端自定义消息事件类型字符串: message
+"""
+
+
 @sio.on('connect')
 def connect(sid, environ):
     '''
-    :param sid: 唯一标识的客户端id
-    :param environ: 客户端与服务端第一次建立连接的握手数据,dict类型
+    1.当客户端连接sio服务器成功后，im主动发送一条消息给客户端
+    :param sid: 唯一用户标识
+    :param environ: 首次连接的握手数据,dict类型
+    :return: 连接成功信息
     '''
-    print('连接成功: {}'.format(sid))
+
+    # 应答数据
+    reply_data = {
+        'msg': '连接成功:{}'.format(sid),
+        'timestamp': round(time.time())
+    }
+    # 使用sio服务器对象发送数据
+    # sio.emit('message', reply_data, room=sid)
+    sio.send(reply_data, room=sid)
 
 
-# 断开连接事件,与客户端断开连接后被执行
-@sio.on('disconnect')
-def disconnect(sid):
+@sio.on('message')
+def ai_reply(sid, data):
     '''
-    :param sid: 唯一标识的客户端id
+    2.当客户端发送消息给sio服务器，调用（RPC）AI系统智能回复一条消息
+    :param sid: 唯一用户标识
+    :param data: 客户端发送的数据
+    :return: AI系统回复的消息
     '''
-    pass
 
-# 非特殊事件
-# 自定义事件
-@sio.on('my event')
-def do_something(sid, data):
-    '''
-    :param sid: 唯一标识的客户端id
-    :param data: 客户端发送给服务器的数据
-    '''
-    pass
-
-
-'''
-user_sid = None
-room_name = None
-# 发送消息
-
-# 1.群发
-# sio.emit(event='事件名称', data=发送的数据内容)
-sio.emit(event='my event', data={'data': 'Hello'})
-
-# 2.单发 -- room=user_sid
-# sio.emit(event='事件名称', data=发送的数据内容, room=指定用户的sid)
-sio.emit(event='my event', data={'data': 'Hello'}, room=user_sid)
-
-# 3.跳过某个用户 -- skip_sid
-sio.emit('my event', {'data': 'Hello'}, room=room_name, skip_sid=user_sid)
-
-# 4.特殊事件简写 -- message
-# 原始
-sio.emit('message', {'data': 'Hello'}, room=room_name)
-# 简写后
-sio.send({'data': 'Hello'}, room=room_name)
-
-
-# 客户端分组(房间)
-sid = None
-
-# 1.将sid添加到房间
-sio.enter_room(sid, room_name)
-
-# 2.将sid从房间中移除
-sio.leave_room(sid, room_name)
-
-# 3.查看sid属于哪个分组(房间)
-sio.rooms(sid)
-'''
+    # 模拟AI系统应答数据
+    reply_data = {
+        'msg': '你好,我是小智,已收到你的咨询:{}'.format(data),
+        'timestamp': round(time.time())
+    }
+    # 发送
+    sio.send(reply_data, room=sid)
