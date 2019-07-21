@@ -5,10 +5,6 @@ import grpc
 from elasticsearch5 import Elasticsearch
 # import socketio
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor
-from .schedule.statistics import *
-
 
 def create_flask_app(config, enable_config_file=False):
     """
@@ -41,21 +37,6 @@ def create_app(config, enable_config_file=False):
                              app.config['WORKER_ID'],
                              app.config['SEQUENCE'])
 
-    # 定时任务
-    # 创建执行器对象
-    executors = {
-        # 默认多线程,最大10个线程并发执行
-        'default': ThreadPoolExecutor(max_workers=10)
-    }
-    # 创建调度器对象
-    app.scheduler = BackgroundScheduler(executors=executors)
-    # 添加定时任务,每天凌晨4点执行
-    # app.scheduler.add_job(fix_statistic, trigger='cron', hour=4, args=[app])
-    # 立即执行
-    app.scheduler.add_job(fix_statistic, trigger='date', args=[app])
-    # 启动调度器
-    app.scheduler.start()
-
     # 限流器
     from utils.limiter import limiter as lmt
     lmt.init_app(app)
@@ -76,8 +57,8 @@ def create_app(config, enable_config_file=False):
     from rediscluster import StrictRedisCluster
     app.redis_cluster = StrictRedisCluster(startup_nodes=app.config['REDIS_CLUSTER'])
 
-    # rpc
-    # app.rpc_reco = grpc.insecure_channel(app.config['RPC'].RECOMMEND)
+    # rpc 文章推荐连接对象
+    app.rpc_reco = grpc.insecure_channel(app.config['RPC'].RECOMMEND)
 
     # Elasticsearch
     app.es = Elasticsearch(
@@ -92,7 +73,6 @@ def create_app(config, enable_config_file=False):
 
     # socket.io
     # app.sio = socketio.KombuManager(app.config['RABBITMQ'], write_only=True)
-
     # MySQL数据库连接初始化
     from models import db
 
@@ -101,6 +81,28 @@ def create_app(config, enable_config_file=False):
     # 添加请求钩子
     from utils.middlewares import jwt_authentication
     app.before_request(jwt_authentication)
+
+    # TODO 调度器
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.executors.pool import ThreadPoolExecutor
+    from apscheduler.triggers import date,interval,cron
+    from toutiao.schedule.statistics import fix_statistic
+
+    # 定时任务
+    # 创建执行器对象
+    executors = {
+        # 默认多线程,最大10个线程并发执行
+        'default': ThreadPoolExecutor(max_workers=10)
+    }
+    # 创建调度器对象
+    scheduler = BackgroundScheduler(executors=executors)
+    app.scheduler = scheduler
+    # 添加定时任务,每天凌晨4点执行
+    # app.scheduler.add_job(fix_statistic, trigger='cron', hour=4, args=[app])
+    # 立即执行
+    app.scheduler.add_job(fix_statistic, trigger='date', args=[app])
+    # 启动调度器
+    app.scheduler.start()
 
     # 注册用户模块蓝图
     from .resources.user import user_bp

@@ -32,3 +32,16 @@ class UserNotFoundCachTTL(BaseCachTTL):
     TTL = 60 * 60
     # 重写随机最大过期时长,5分钟
     MAX_DATE = 5 * 60
+
+
+class ArticleCachTTL(BaseCachTTL):
+    '''文章数据过期时长'''
+
+    pass
+
+
+class ArticleNotFoundCachTTL(BaseCachTTL):
+    '''文章缓存未找到的过期时长'''
+
+    TTL = 60 * 60
+    MAX_DATE = 5 * 60

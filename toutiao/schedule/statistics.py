@@ -1,4 +1,4 @@
-from common.cache.statistic import *
+from common.cache.statistic import UserArticleCountStorage,UserFollowingCountStorage
 
 
 def fix_thread(count_storage_cls):
